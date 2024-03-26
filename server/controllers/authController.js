@@ -1,15 +1,15 @@
-const User = require("../models/User");
-const Token = require("../models/Token");
-const { StatusCodes } = require("http-status-codes");
-const CustomError = require("../errors");
-const {
-  attachCookiesToResponse,
-  createTokenUser,
-  sendVerificationEmail,
-  sendResetPasswordEmail,
-  createHash,
-} = require("../utils");
-const crypto = require("crypto");
+// 3rd party
+import { StatusCodes } from "http-status-codes";
+
+// models
+import User from "../models/User.js";
+import Token from "../models/Token.js";
+
+// errors
+import CustomError from "../errors/index.js";
+
+import jwtUtils from "../utils/index.js";
+import crypto from "crypto";
 //const sendEmail = require("../utils/sendEmail");
 
 // ----- Register -----
@@ -55,7 +55,7 @@ const register = async (req, res) => {
   // const forwardedHost = req.get('x-forwarded-host');
   // const forwardedProtocol = req.get('x-forwarded-proto');
 
-  await sendVerificationEmail({
+  await jwtUtils.sendVerificationEmail({
     name: user.name,
     email: user.email,
     verificationToken: user.verificationToken,
@@ -113,7 +113,7 @@ const login = async (req, res) => {
     throw new CustomError.UnauthenticatedError("Please verify your email");
   }
 
-  const tokenUser = createTokenUser(user);
+  const tokenUser = jwtUtils.createTokenUser(user);
 
   // create refresh token
   let refreshToken = "";
@@ -129,7 +129,7 @@ const login = async (req, res) => {
 
     refreshToken = existingToken.refreshToken;
 
-    attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+    jwtUtils.attachCookiesToResponse({ res, user: tokenUser, refreshToken });
 
     res.status(StatusCodes.OK).json({ user: tokenUser });
 
@@ -143,7 +143,7 @@ const login = async (req, res) => {
 
   await Token.create(userToken);
 
-  attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+  jwtUtils.attachCookiesToResponse({ res, user: tokenUser, refreshToken });
 
   res.status(StatusCodes.OK).json({ user: tokenUser });
 };
@@ -180,7 +180,7 @@ const forgotPassword = async (req, res) => {
     // send email
     const origin = "http://localhost:3000";
 
-    await sendResetPasswordEmail({
+    await jwtUtils.sendResetPasswordEmail({
       name: user.name,
       email: user.email,
       token: passwordToken,
@@ -190,7 +190,7 @@ const forgotPassword = async (req, res) => {
     const tenMinutes = 1000 * 60 * 10;
     const passwordTokenExpirationDate = new Date(Date.now() + tenMinutes);
 
-    user.passwordToken = createHash(passwordToken);
+    user.passwordToken = jwtUtils.createHash(passwordToken);
     user.passwordTokenExpirationDate = passwordTokenExpirationDate;
     await user.save();
   }
@@ -214,7 +214,7 @@ const resetPassword = async (req, res) => {
     const currentDate = new Date();
 
     if (
-      user.passwordToken === createHash(token) &&
+      user.passwordToken === jwtUtils.createHash(token) &&
       user.passwordTokenExpirationDate > currentDate
     ) {
       user.password = password;
@@ -227,11 +227,4 @@ const resetPassword = async (req, res) => {
   res.send("reset password");
 };
 
-module.exports = {
-  register,
-  login,
-  logout,
-  verifyEmail,
-  forgotPassword,
-  resetPassword,
-};
+export { register, login, logout, verifyEmail, forgotPassword, resetPassword };

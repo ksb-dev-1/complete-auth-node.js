@@ -1,5 +1,6 @@
 {
   "name": "complete-auth-node.js",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -29,6 +30,7 @@
     "xss-clean": "^0.1.1"
   },
   "devDependencies": {
+    "@types/express-rate-limit": "^6.0.0",
     "nodemon": "^2.0.9"
   }
 }
